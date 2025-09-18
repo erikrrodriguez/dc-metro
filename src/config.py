@@ -33,10 +33,10 @@ config = {
 	'walking_times': [2, 12],
 
 	# WMATA API
-	'wmata_api_url': 'https://api.wmata.com/StationPrediction.svc/json/GetPrediction/',
+	'wmata_api_url': 'http://api.wmata.com/StationPrediction.svc/json/GetPrediction/',
 
 	# # MetroHero API
-	'metro_hero_api_url': 'https://dcmetrohero.com/api/v1/metrorail/stations/[stationCode]/trains?includeScheduledPredictions=True',
+	'metro_hero_api_url': 'http://dcmetrohero.com/api/v1/metrorail/stations/[stationCode]/trains?includeScheduledPredictions=True',
 
 	'metro_api_retries': 3,
 	'refresh_interval': 5, # 5 seconds is a good middle ground for updates, as the processor takes its sweet ol time
