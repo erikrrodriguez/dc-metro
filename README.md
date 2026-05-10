@@ -1,6 +1,6 @@
 Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the following features:
 - allow multiple train stations
-- allow buses (each stop needs regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10)
+- allow buses (each stop needs regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10))
 - show metro rail incidents (only for affected lines)
 - implement a "walking distance" modifier to ignore trains/buses you cannot get to in time.
 - Updated to CircuitPython 10 and corresponding libraries.
