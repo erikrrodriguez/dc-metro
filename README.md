@@ -1,6 +1,6 @@
 Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the following features:
 - allow multiple train stations
-- allow buses (each stop needs regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10))
+- allow buses (each stop you want to track needs the regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10))
 - show metro rail incidents (only for affected lines)
 - implement a "walking distance" modifier to ignore trains/buses you cannot get to in time.
 - Updated to CircuitPython 10 and corresponding libraries.
@@ -8,6 +8,18 @@ Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the foll
 Also includes fixes and features from:
 - Scott Garcia (scottiegarcia) (help with Metrohero API (RIP), tidying, and implementing shut off hours for the board) 
 - ScottKekoaShay (Auto swapping between train platforms, if desired)
+
+**Note**: it's only possible to track 2 bus stops currently. 1 per "swap".
+
+CircuitPython 10 does away with the "secrets.py" and now uses a "settings.toml". You'll need to create one in the board's directory. Documentation is [here](https://learn.adafruit.com/scrolling-countdown-timer/create-your-settings-toml-file). The file should look like:
+```
+CIRCUITPY_WIFI_SSID = "[your wifi name here]"
+CIRCUITPY_WIFI_PASSWORD = "[your wifi password here]"
+aio_username = "[your user name]"
+aio_key = "[your api key]"
+timezone = "America/New_York"
+wmata_api_key = "[your api key]"
+```
 
 I have the following v10 libraries installed:
 - bitmap_font
@@ -27,7 +39,7 @@ I have the following v10 libraries installed:
 - neopixel.mpy
 - neopixel_spi.mpy
 
-Original documentation below, I'm too lazy to add a new .gif:
+Original project documentation below, I'm too lazy to add a new .gif:
 
 # Washington DC Metro Train Sign
 This project contains the source code to create your own Washington DC Metro sign. It was written using CircuitPython targeting the [Adafruit Matrix Portal](https://www.adafruit.com/product/4745) and is optimized for 64x32 RGB LED matrices.
