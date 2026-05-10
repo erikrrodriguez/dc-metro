@@ -1,8 +1,31 @@
-Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to allow multiple stations and implement a "walking distance" modifier to ignore trains you cannot get to in time. Uses CircuitPython 8 and corresponding libraries.
+Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the following features:
+- allow multiple train stations
+- allow buses (each stop needs regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10)
+- show metro rail incidents (only for affected lines)
+- implement a "walking distance" modifier to ignore trains/buses you cannot get to in time.
+- Updated to CircuitPython 10 and corresponding libraries.
 
-Includes fixes and features from:
+Also includes fixes and features from:
 - Scott Garcia (scottiegarcia) (help with Metrohero API (RIP), tidying, and implementing shut off hours for the board) 
 - ScottKekoaShay (Auto swapping between train platforms, if desired)
+
+I have the following v10 libraries installed:
+- bitmap_font
+- bus_device
+- display_shapes
+- display_text
+- esp32spi
+- imageload
+- io
+- matrixportal
+- minimqtt
+- connection_manager.mpy
+- fakerequests.mpy
+- lis3dh.mpy
+- requests.mpy
+- ticks.mpy
+- neopixel.mpy
+- neopixel_spi.mpy
 
 Original documentation below, I'm too lazy to add a new .gif:
 
