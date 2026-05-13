@@ -18,7 +18,7 @@ class TrainBoard:
                 'destination': 'Dest Str',
                 'text_arrival': '5'
                 'int_arrival': 5
-            }
+            },
         ],
         'buses': [
             {
@@ -26,12 +26,12 @@ class TrainBoard:
                 'destination': 'C51 - N',
                 'text_arrival': '5'
                 'int_arrival': 5
-            }
+            },
         ],
         'incidents': [
             {
                 "description": "Red Line: Expect residual delays to Glenmont due to an earlier signal problem outside Forest Glen.",
-            }
+            },
         ]
     }
     """
@@ -53,16 +53,15 @@ class TrainBoard:
         self.display.root_group = self.parent_group
 
     def refresh(self) -> bool:
-        print("Refreshing information...")
         data = self.get_new_data()
-        trains = data['trains']
-        buses = data['buses']
-        incidents = data['incidents']
+        trains = data["trains"]
+        buses = data["buses"]
+        incidents = data["incidents"]
 
-        if len(trains) > 2 and len(buses) > 0:
-            trains_and_buses = trains[:2] + buses
-        else:
+        if len(trains) > 0 or len(buses) > 0:
             trains_and_buses = trains + buses
+        else:
+            trains_and_buses = None
 
         if trains_and_buses is not None:
             for i in range(config["num_lines"]):
@@ -78,24 +77,24 @@ class TrainBoard:
             print("No data received. Clearing display.")
             for i in range(config["num_lines"]):
                 self._hide_line(i)
-        
+
         if len(incidents) > 0:
             self._show_incidents(incidents)
         else:
             self.heading_label.text = config["heading_text"]
-    
+
     def _show_incidents(self, incidents):
         for incident in incidents:
-            self.heading_label.text = incident['description']
-            time.sleep(1)
+            self.heading_label.text = incident["description"]
+            time.sleep(0.5)
             self._scroll(self.heading_label)
         self.heading_label.text = config["heading_text"]
-    
+
     def _scroll(self, label):
         label_width = label.bounding_box[2]
         while label.x > -label_width:
             label.x = label.x - 1
-            time.sleep(config['scroll_delay'])
+            time.sleep(config["scroll_delay"])
         label.x = 0
 
     def _hide_line(self, index: int):
@@ -177,3 +176,44 @@ class Line:
         self.set_line_color(line_color)
         self.set_destination(destination)
         self.set_arrival_time(minutes)
+
+
+class ErrorBoard:
+    def __init__(self, error_msg):
+        self.display = Matrix().display
+        self.display.brightness = 1
+        self.parent_group = displayio.Group()
+
+        self.label_1 = Label(
+            config["font"], color=config["heading_color"], text=error_msg
+        )
+        self.label_1.anchor_point = (0, 0)
+        self.label_1.anchored_position = (0, 12)
+        text_width = self.label_1.bounding_box[2]
+
+        # Create Label 2 for marquee scrolling
+        self.label_2 = Label(
+            config["font"], color=config["heading_color"], text=error_msg
+        )
+        self.label_2.anchor_point = (0, 0)
+        spacing = 30  # Pixels between the end and the restart
+        self.label_2.anchored_position = (text_width + spacing, 12)
+
+        self.parent_group.append(self.label_1)
+        self.parent_group.append(self.label_2)
+        self.display.root_group = self.parent_group
+
+        while True:
+            self._scroll(text_width, spacing)
+
+    def _scroll(self, text_width, padding):
+        self.label_1.x -= 1
+        self.label_2.x -= 1
+
+        if self.label_1.x < -text_width:
+            self.label_1.x = self.label_2.x + text_width + padding
+
+        if self.label_2.x < -text_width:
+            self.label_2.x = self.label_1.x + text_width + padding
+
+        time.sleep(config["scroll_delay"])
