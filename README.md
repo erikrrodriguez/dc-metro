@@ -2,26 +2,26 @@ Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the foll
 - allow multiple train stations
 - allow buses (each stop you want to track needs the regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10))
 - Use a "page" system to mix and match any number of trains/buses
-- show metro rail and bus incidents
+- optionally show metro rail and bus incidents
 - implement a "walking distance" modifier to ignore trains/buses you cannot get to in time.
-- Updated to CircuitPython 10 and corresponding libraries.
 - Errors/Crashes will display on the board
+- Updated to CircuitPython 10 and corresponding libraries.
 
 Thanks to:
 - Scott Garcia (scottiegarcia) for help with Metrohero API (RIP), tidying, and implementing shut off hours for the board
-- ScottKekoaShay for auto swapping between train platforms (now replaced by page system)
+- ScottKekoaShay for initial implementation of swapping between train platforms (now replaced by page system)
 
 CircuitPython 10 does away with the "secrets.py" and now uses a "settings.toml". You'll need to create one in the board's directory. Documentation is [here](https://learn.adafruit.com/scrolling-countdown-timer/create-your-settings-toml-file). The file should look like:
 ```
 CIRCUITPY_WIFI_SSID = "[your wifi name here]"
 CIRCUITPY_WIFI_PASSWORD = "[your wifi password here]"
+wmata_api_key = "[your api key]"
 aio_username = "[your user name]"
 aio_key = "[your api key]"
 timezone = "America/New_York"
-wmata_api_key = "[your api key]"
 ```
 
-Original project documentation below, I'm too lazy to add a new .gif:
+Original project documentation below (with some edits by me), I'm too lazy to add a new .gif:
 
 # Washington DC Metro Train Sign
 This project contains the source code to create your own Washington DC Metro sign. It was written using CircuitPython targeting the [Adafruit Matrix Portal](https://www.adafruit.com/product/4745) and is optimized for 64x32 RGB LED matrices.
@@ -75,13 +75,13 @@ This project contains the source code to create your own Washington DC Metro sig
     
     ![Matrix Connected via USB](img/usb-connected.jpg)
 
-2. Flash your _Matrix Portal_ with the latest release of CircuitPython 8.
+2. Flash your _Matrix Portal_ with the latest release of CircuitPython 10.
     - Download the [firmware from Adafruit](https://circuitpython.org/board/matrixportal_m4/).
     - Drag the downloaded _.uf2_ file into the root of the _MATRIXBOOT_ volume.
     - The board will automatically flash the version of CircuitPython and remount as _CIRCUITPY_.
     - If something goes wrong, refer to the [Adafruit Documentation](https://learn.adafruit.com/adafruit-matrixportal-m4/install-circuitpython).
 
-3. Decompress the _lib.zip_ file for 8.x from this repository into the root of the _CIRCUITPY_ volume. There should be one folder named _lib_, with a plethora of files underneath. You can delete _lib.zip_ from the _CIRCUITPY_ volume, as it's no longer needed.
+3. Decompress the _lib.zip_ file for 10.x from this repository into the root of the _CIRCUITPY_ volume. There should be one folder named _lib_, with a plethora of files underneath. You can delete _lib.zip_ from the _CIRCUITPY_ volume, as it's no longer needed.
 
     - It has been reported that this step may fail ([Issue #2](https://github.com/metro-sign/dc-metro/issues/2)), most likely due to the storage on the Matrix Portal not being able to handle the decompression. If this happens, unzip the _lib.zip_ file on your computer, and copy the _lib_ folder to the Matrix Portal. Command line tools could also be used if the above doesn't work.
 
@@ -91,98 +91,101 @@ This project contains the source code to create your own Washington DC Metro sig
 
     ![Source Files](img/source.png)
 
-5. The board should now light up with a loading screen, but we've still got some work to do.
+5. Create a _settings.toml_ file following [this documentation](https://learn.adafruit.com/scrolling-countdown-timer/create-your-settings-toml-file). The file should look like
+
+    ```
+    CIRCUITPY_WIFI_SSID = "[your wifi name here]"
+    CIRCUITPY_WIFI_PASSWORD = "[your wifi password here]"
+    wmata_api_key = "[your api key]"
+    aio_username = "[your user name]"
+    aio_key = "[your api key]"
+    timezone = "America/New_York"
+    ```
+
+7. The board should now light up with a loading screen, but we've still got some work to do.
 
     ![Loading Sign](img/loading.jpg)
 
-## Part 3: Getting a WMATA / Metro Hero API Key
-Two API's are available with public metro data. The Official WMATA API and the MetroHero API. Either will work, but I opt for the latter because I think it's train times are more accurate and because it gives estimates for trains >30 minutes away. Either will work correctly, at least until Metrohero sunsets in July 2023, RIP.
-
-### Part 3.a: Getting a WMATA API Key
+## Part 3: Getting a WMATA API Key
 1. Create a WMATA developer account on [WMATA's Developer Website](https://developer.wmata.com/signup/).
 2. After your account is created, add the _Default Tier_ subscription to your account on [this page](https://developer.wmata.com/products/5475f1b0031f590f380924fe).
 3. After doing this, you will be redirected to [your profile](https://developer.wmata.com/developer).
 4. Under the _Subscriptions_ section on your profile, select the **show** button beside the _Primary Key_. This is the key that allows the board to communicate with WMATA.
 
-### Part 3.b: Getting a Metro Hero Key
-1. Send an polite email to contact@dcmetrohero.com asking for an API Key. [MetroHero's Developer Website](https://www.dcmetrohero.com/apis).
-2. Wait patiently for their reply with your API key.
-
-
 ## Part 4: (Optional) Obtain adafruit IO Key for Off Hours.
 If you'd like to configure your board to turn the display off for certain hours of the day, you'll need to set up a free account with Adafruit to make requests for the local time. You may skip this if you are not interested in this feature.
 
 1. Follow steps 1-3 outlined [here](https://learn.adafruit.com/adafruit-magtag/getting-the-date-time).
-2. Make note of your username and your Adafruit IO key.
+2. Make note of your username and your Adafruit IO key. Add it to the _settings.toml_ file
 
 ## Part 5: Configuring the Board
 1. Open the [config.py](src/config.py) file located in the root of the _CIRCUITPY_ volume.
-2. Fill in your WiFi SSID and password under the **Network Configuration** section.
-3. Under the **Metro Configuration** section:
-    1. If using MetroHero, update the _source_api_ field to `MetroHero`.
-    2. Set either the _wmata_api_key_ or _metro_hero_api_key to the API key you got from [Part 3](#part-3-getting-a-wmata-/-metro-hero-api-key).
-    3. Select your stations and lines from the [Metro Station Codes table](#dc-metro-station-codes), and set the _metro_station_codes_ value to the corresponding value in the table.
-    4. For _train_groups_1_, the values need to be either **'1'** or **'2'** or  **'3'**. This determines which platform's arrival times will be displayed. These typically fall in line with the values provided in the [Train Group table](#train-group-explanations), although single tracking and other events can cause these to change. The ordering must match the ordering used in _metro_station_codes_.
-        1. If you would like for the board to swap which train groups are displayed on each refresh, set the _swap_train_groups_ varaible to True, and define your second set of train groups in _train_groups_2_ 
-    6. Set the _walking_times_ values to the time it takes you to get to these stations. This will make your sign ignore trains arriving in less than this much time.
+3. Under the **Define Pages** section:
+    1. Configure your pages. The board will cycle through these displaying one at a time. Each page can be a mixture of trains or buses.
+    2. For Trains, select your stations and lines from the [Metro Station Codes table](#dc-metro-station-codes), and set the _station_codes_ list to the corresponding values in the table. For trains groups see [Train Group table](#train-group-explanations), below.
+    3. For buses, find regional bus stop codes from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10)
+    4. Optionally, set the _walking_times_ values to the time it takes you to get to these stations or bus stops. This will make your sign ignore trains/buses arriving in less than this much time. NOTE: if there are no trains/buses meeting this criteria then all buses will be shown just so the board doesn't look empty.
+    5. If you mess this up, the board will tell you when it tries to validate the page structure.
 4. (Optional) Under the **Off Hours Configuration** section:
-    1. Set _aio_username_ to the username you created with Adafruit in [Part 4]((optional)-obtain-adafruit-io-key-for-off-hours).
-    2. Set _aio_key_ to the api key associated with your Adafruit account.
-    3. Set the _display_on_time_ and _display_off_time_ variables to the time of day you would like the sign to be turned off and on. Note that they must be of the format "HH:MM" and use a 24 hour clock.
-4. At the end, the first part of your configuration file should look similar this:
+    1. Set the _display_on_time_ and _display_off_time_ variables to the time of day you would like the sign to be turned off and on. Note that they must be of the format "HH:MM" and use a 24 hour clock.
 
-
+Here is an example config:
 
 ```python
-#########################
-# Network Configuration #
-#########################
-
-# WIFI Network SSID
-'wifi_ssid': 'Grindr Pickup Zone',
-
-# WIFI Password
-'wifi_password': 'MyMetroBoardBringsTheBoisToTheNavyYard',
-
-#########################
-# Metro Configuration   #
-#########################
-'source_api': 'WMATA', # WMATA or MetroHero.
-
-# WMATA / MetroHero API Key
-'wmata_api_key': 'd3adb33fd3adb33fd3adb33f',
-'metro_hero_api_key': '',
-
-# Metro Station Code
-'metro_station_codes': ['E03','C02'],
-
-# Metro Train Group
-'train_groups': ['2','2'],
-
-#Walking Distance Times, ignore trains arriving in less than this time
-# [2, 12]
-'walking_times': [8, 8],
-
-# API Key for WMATA
-'metro_api_key': 'd3adb33fd3adb33fd3adb33f',
-
-...
-...
-...
-
-#############################
-# Off Hours Configuration   #
-#############################
-
-# adafruit io settings, necessary for determining current time to sleep
-# An account is free to set up, instructions below
-# https://learn.adafruit.com/adafruit-magtag/getting-the-date-time
-'aio_username': 'aio_username',
-'aio_key': 'jf9834f983hf98h434',
-
-# Time of day to turn board on and off - must be 24 hour "HH:MM"
-'display_on_time': "07:00",
-'display_off_time': "22:00",
+    ###########################################
+    # Define Pages for board to cycle through #
+    ###########################################
+    # The structure of a page looks like
+    # {
+    #         "trains": {
+    #                 "station_codes": ["E01"], # Required. At least one station. List at https://github.com/metro-sign/dc-metro?tab=readme-ov-file#dc-metro-station-codes
+    #                 "train_groups": [["1"]], # Required. one list entry per station code. Either ["1"]  to show one direction or ["1", "2"] to show both
+    #                 "walking_times": [7], # Optional. One per station code if provided. Will default to 0 if not provided
+    #                 "show_incidents": True, # Optional. Will default to False
+    #             },
+    #         "buses": {
+    #                 "bus_stop_codes": [1001368, 1001441], # Required. At least one bus stop
+    #                 "walking_times": [2, 3], # Optional. One per bus stop if provided. Will default to 0
+    #                 "bus_lines": ['C51', 'C91'], # Optional, as many as you like. Default will show all buses at a stop
+    #                 "show_incidents": True, # Optional. Will default to False
+    #             }
+    # }
+    #
+    # Neither 'trains' or 'buses' is required (max 1 of each per page) so you can mix and match however you like. Just be wary of the 50,000 daily API request limit
+    ###########################################
+    "pages": [
+        {
+            "trains": {
+                "station_codes": ["E01"],
+                "train_groups": [["1"]],
+                "walking_times": [7],
+                "show_incidents": True,
+            },
+        },
+        {
+            "trains": {
+                "station_codes": ["E01"],
+                "train_groups": [["2"]],
+                "walking_times": [7],
+                "show_incidents": True,
+            },
+        },
+        {
+            "buses": {
+                "bus_stop_codes": [1001368, 1001441, 1001293],
+                "walking_times": [2, 3, 6],
+                "bus_lines": ["C51", "C91", "D40", "D4X"],
+                "show_incidents": False,
+            },
+        },
+    ],
+    #############################
+    # Off Hours Configuration   #
+    #############################
+    # Instructions at https://learn.adafruit.com/adafruit-magtag/getting-the-date-time
+    # Time of day to turn board on and off - must be 24 hour format "HH:MM"
+    "display_on_time": "07:00",
+    "display_off_time": "23:00",
 ```
 
 
