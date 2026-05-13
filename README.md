@@ -1,15 +1,15 @@
 Forked from [metro-sign](https://github.com/metro-sign/dc-metro) to add the following features:
 - allow multiple train stations
 - allow buses (each stop you want to track needs the regional code from [this map](https://opendata.dc.gov/datasets/DCGIS::metro-bus-stops/explore?location=38.923580%2C-77.046055%2C10))
-- show metro rail incidents (only for affected lines)
+- Use a "page" system to mix and match any number of trains/buses
+- show metro rail and bus incidents
 - implement a "walking distance" modifier to ignore trains/buses you cannot get to in time.
 - Updated to CircuitPython 10 and corresponding libraries.
+- Errors/Crashes will display on the board
 
-Also includes fixes and features from:
-- Scott Garcia (scottiegarcia) (help with Metrohero API (RIP), tidying, and implementing shut off hours for the board) 
-- ScottKekoaShay (Auto swapping between train platforms, if desired)
-
-**Note**: it's only possible to track 2 bus stops currently. 1 per "swap".
+Thanks to:
+- Scott Garcia (scottiegarcia) for help with Metrohero API (RIP), tidying, and implementing shut off hours for the board
+- ScottKekoaShay for auto swapping between train platforms (now replaced by page system)
 
 CircuitPython 10 does away with the "secrets.py" and now uses a "settings.toml". You'll need to create one in the board's directory. Documentation is [here](https://learn.adafruit.com/scrolling-countdown-timer/create-your-settings-toml-file). The file should look like:
 ```
@@ -20,24 +20,6 @@ aio_key = "[your api key]"
 timezone = "America/New_York"
 wmata_api_key = "[your api key]"
 ```
-
-I have the following v10 libraries installed:
-- bitmap_font
-- bus_device
-- display_shapes
-- display_text
-- esp32spi
-- imageload
-- io
-- matrixportal
-- minimqtt
-- connection_manager.mpy
-- fakerequests.mpy
-- lis3dh.mpy
-- requests.mpy
-- ticks.mpy
-- neopixel.mpy
-- neopixel_spi.mpy
 
 Original project documentation below, I'm too lazy to add a new .gif:
 
