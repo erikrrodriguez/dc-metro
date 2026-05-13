@@ -1,4 +1,5 @@
 import time
+import rtc
 from os import getenv
 from config import config
 from train_board import TrainBoard, ErrorBoard
@@ -28,6 +29,8 @@ spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 status_pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.2)
 wifi = WiFiManager(esp, ssid, password, status_pixel=status_pixel)
+REFRESH_INTERVAL = config["refresh_interval"]
+LAST_SYNC_TIME = -90000
 
 # For telling time, get our username, api key, and desired timezone
 aio_username = getenv("aio_username")
@@ -41,7 +44,51 @@ OFF_HOURS_ENABLED = (
     and config.get("display_on_time")
     and config.get("display_off_time")
 )
-REFRESH_INTERVAL = config["refresh_interval"]
+
+
+def sync_rtc():
+    while True:
+        try:
+            print("Syncing RTC with API...")
+            with wifi.get(TIME_URL, timeout=10) as response:
+                if response.status_code == 200:
+                    now = response.text
+                    # Split into date and time
+                    date_str, time_str, _ = now.split(" ", 2)
+                    y, m, d = map(int, date_str.split("-"))
+                    hh, mm, ss = map(int, time_str.split(".")[0].split(":"))
+
+                    rtc.RTC().datetime = time.struct_time(
+                        (y, m, d, hh, mm, ss, 0, -1, -1)
+                    )
+                    print("RTC Sync complete.")
+                    break
+        except Exception as e:
+            print(f"Time Sync failed: {e}")
+            time.sleep(REFRESH_INTERVAL)
+
+
+def is_off_hours() -> bool:
+    ON_HOUR, ON_MINUTE = map(int, config["display_on_time"].split(":"))
+    OFF_HOUR, OFF_MINUTE = map(int, config["display_off_time"].split(":"))
+
+    # Get the time directly from the processor
+    now = rtc.RTC().datetime
+    now_hour = now.tm_hour
+    now_minute = now.tm_min
+
+    # Your existing logic remains the same
+    after_end = now_hour > OFF_HOUR or (
+        now_hour == OFF_HOUR and now_minute > OFF_MINUTE
+    )
+    before_start = now_hour < ON_HOUR or (
+        now_hour == ON_HOUR and now_minute < ON_MINUTE
+    )
+
+    if ON_HOUR < OFF_HOUR or (ON_HOUR == OFF_HOUR and ON_MINUTE < OFF_MINUTE):
+        return after_end or before_start
+    else:
+        return after_end and before_start
 
 
 def validate_pages(config):
@@ -99,40 +146,6 @@ def validate_pages(config):
                     f"Page {i} - Buses: Found {len(walking_times)} walking_times, but {len(stop_codes)} bus_stop_codes."
                 )
     print("Page validation successful")
-
-
-def is_off_hours() -> bool:
-    try:
-        ON_HOUR, ON_MINUTE = map(int, config["display_on_time"].split(":"))
-        OFF_HOUR, OFF_MINUTE = map(int, config["display_off_time"].split(":"))
-
-        with wifi.get(TIME_URL, timeout=30) as response:
-            if response.status_code != 200:
-                print(f"Time API Error: {response.status_code}")
-                return False
-            now = response.text  # looks like "2026-05-12 12:10:24.652 132 2 -0400 EDT"
-            try:
-                parts = now.split(" ")
-                time_part = parts[1]
-                h_m_s = time_part.split(":")
-                now_hour = int(h_m_s[0])
-                now_minute = int(h_m_s[1])
-            except Exception as e:
-                print(f"Failed to parse time string: {now}. Error: {e}")
-                return False
-        after_end = now_hour > OFF_HOUR or (
-            now_hour == OFF_HOUR and now_minute > OFF_MINUTE
-        )
-        before_start = now_hour < ON_HOUR or (
-            now_hour == ON_HOUR and now_minute < ON_MINUTE
-        )
-        if ON_HOUR < OFF_HOUR or (ON_HOUR == OFF_HOUR and ON_MINUTE < OFF_MINUTE):
-            return after_end or before_start
-        else:
-            return after_end and before_start
-    except Exception as e:
-        print(f"Error in is_off_hours: {e}")
-        return False
 
 
 def reset_wifi():
@@ -209,6 +222,10 @@ try:
     train_board = TrainBoard(lambda: refresh(PAGES[page_index]))
     while True:
         start_time = time.monotonic()
+        if OFF_HOURS_ENABLED and (start_time - LAST_SYNC_TIME > 86400):
+            sync_rtc()
+            LAST_SYNC_TIME = time.monotonic()
+
         if OFF_HOURS_ENABLED and is_off_hours():
             train_board.turn_off_display()
         else:

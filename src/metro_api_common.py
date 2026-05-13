@@ -10,7 +10,7 @@ class MetroApiOnFireException(Exception):
 class MetroApiUtils:
     @staticmethod
     def maybe_retry(attempt, max_retries, error_msg):
-        refresh_interval = config["refresh_interval"] * attempt
+        refresh_interval = config["refresh_interval"] * (attempt + 1)
         print(f"Attempt {attempt + 1}/{max_retries + 1} failed: {error_msg}")
         if attempt < max_retries:
             print(f"Reattempting in {refresh_interval} seconds...")
@@ -23,9 +23,11 @@ class MetroApiUtils:
     def query_api(wifi, api_url):
         api_key = getenv("wmata_api_key")
         try:
-            with wifi.get(api_url, headers={"api_key": api_key}, timeout=30) as response:
+            with wifi.get(
+                api_url, headers={"api_key": api_key}, timeout=30
+            ) as response:
                 if response.status_code == 200:
                     return response.json()
-                raise Exception(f"Server error: {response.status_code}")         
+                raise Exception(f"Server error: {response.status_code}")
         except Exception as e:
             raise Exception(f"Network/Wifi error: {e}")
