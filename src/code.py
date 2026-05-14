@@ -53,7 +53,6 @@ def sync_rtc():
             with wifi.get(TIME_URL, timeout=10) as response:
                 if response.status_code == 200:
                     now = response.text
-                    # Split into date and time
                     date_str, time_str, _ = now.split(" ", 2)
                     y, m, d = map(int, date_str.split("-"))
                     hh, mm, ss = map(int, time_str.split(".")[0].split(":"))
@@ -72,12 +71,10 @@ def is_off_hours() -> bool:
     ON_HOUR, ON_MINUTE = map(int, config["display_on_time"].split(":"))
     OFF_HOUR, OFF_MINUTE = map(int, config["display_off_time"].split(":"))
 
-    # Get the time directly from the processor
     now = rtc.RTC().datetime
     now_hour = now.tm_hour
     now_minute = now.tm_min
 
-    # Your existing logic remains the same
     after_end = now_hour > OFF_HOUR or (
         now_hour == OFF_HOUR and now_minute > OFF_MINUTE
     )
