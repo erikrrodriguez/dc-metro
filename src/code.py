@@ -36,8 +36,6 @@ LAST_SYNC_TIME = -90000
 aio_username = getenv("aio_username")
 aio_key = getenv("aio_key")
 location = getenv("timezone")
-TIME_URL = f"https://io.adafruit.com/api/v2/{aio_username}/integrations/time/strftime?x-aio-key={aio_key}"
-TIME_URL += "&fmt=%25Y-%25m-%25d+%25H%3A%25M%3A%25S.%25L+%25j+%25u+%25z+%25Z"
 OFF_HOURS_ENABLED = (
     aio_username
     and aio_key
@@ -47,10 +45,12 @@ OFF_HOURS_ENABLED = (
 
 
 def sync_rtc():
+    time_api_url = f"https://io.adafruit.com/api/v2/{aio_username}/integrations/time/strftime?x-aio-key={aio_key}"
+    time_api_url += "&fmt=%25Y-%25m-%25d+%25H%3A%25M%3A%25S.%25L+%25j+%25u+%25z+%25Z"
     while True:
         try:
             print("Syncing RTC with API...")
-            with wifi.get(TIME_URL, timeout=10) as response:
+            with wifi.get(time_api_url, timeout=10) as response:
                 if response.status_code == 200:
                     now = response.text
                     date_str, time_str, _ = now.split(" ", 2)
