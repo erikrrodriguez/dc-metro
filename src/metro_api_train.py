@@ -73,7 +73,7 @@ class MetroApiTrain:
                     trains,
                 )
             )
-            if len(filtered_trains) > 0:
+            if len(filtered_trains) > 0 or not config["show_all_if_none_walking"]:
                 trains = filtered_trains
 
         trains = sorted(trains, key=lambda t: t["int_arrival"])

@@ -24,7 +24,7 @@ class MetroApiUtils:
         api_key = getenv("wmata_api_key")
         try:
             with wifi.get(
-                api_url, headers={"api_key": api_key}, timeout=30
+                api_url, headers={"api_key": api_key}, timeout=10
             ) as response:
                 if response.status_code == 200:
                     return response.json()

@@ -57,6 +57,8 @@ config = {
             },
         },
     ],
+    # If there are no trains or buses you can get to in time, then show all trains/buses
+    "show_all_if_none_walking": True,
     # Full station names mapped to abbreviations
     "station_mapping": {
         "Branch Avenue": "Brnch Av",

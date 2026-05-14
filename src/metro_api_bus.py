@@ -78,7 +78,7 @@ class MetroApiBus:
             filtered_buses = list(
                 filter(lambda b: b["int_arrival"] - walking_time >= 0, buses)
             )
-            if len(filtered_buses) > 0:
+            if len(filtered_buses) > 0 or not config["show_all_if_none_walking"]:
                 buses = filtered_buses
 
         return buses
