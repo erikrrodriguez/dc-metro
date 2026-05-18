@@ -68,7 +68,7 @@ config = {
     # Metro Configuration - Gen   #
     ###############################
     "metro_api_retries": 3,
-    "refresh_interval": 8,  # WMATA updates their APIs every 10-20 seconds. Set this proportional to how many pages and API requests you're making (limit 50,000 per 24 hrs)
+    "refresh_interval": 12,  # WMATA updates their APIs every 10-20 seconds. Set this proportional to how many pages and API requests you're making (limit 50,000 per 24 hrs)
     "show_all_if_none_walking": True,  # If there are no trains or buses you can get to in time, then show all trains/buses
     # Full station names mapped to abbreviations
     "station_mapping": {

@@ -124,8 +124,9 @@ class Line:
         self.info_label.x = config["line_width"] + 1
         self.info_label.y = y
         self.info_label.color = config["text_color"]
-        self.info_label.text = config["loading_destination_text"] + "  " + config["loading_min_text"]
-
+        self.info_label.text = (
+            config["loading_destination_text"] + "  " + config["loading_min_text"]
+        )
 
         # self.destination_label = Label(config["font"], anchor_point=(0, 0))
         # self.destination_label.x = config["line_width"] + 1
@@ -176,9 +177,13 @@ class Line:
         self.min_label.text = minutes
 
     def set_info_label(self, destination: str, minutes: str):
-        dest_str = destination[:config["destination_max_characters"]]
-        
-        padding = " " * (int(config["destination_max_characters"]) - len(destination) + (4-len(minutes)))
+        dest_str = destination[: config["destination_max_characters"]]
+
+        padding = " " * (
+            int(config["destination_max_characters"])
+            - len(destination)
+            + (4 - len(minutes))
+        )
         self.info_label.text = f"{dest_str}{padding}{minutes}"
 
     def update(self, line_color: int, destination: str, minutes: str):

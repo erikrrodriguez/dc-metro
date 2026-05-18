@@ -146,15 +146,11 @@ class MetroApiTrain:
             else:
                 avg_interval = arrivals[0]
 
-            print(f'Predicting {key}')
-            print(f'arrivals: {arrivals}')
-
-
             last_arrival = arrivals[-1]
             while len(arrivals) < 6:
                 last_arrival += int(avg_interval)
                 arrivals.append(last_arrival)
-                print(f'new arrivals: {arrivals}')
+                print(f"new arrivals: {arrivals}")
 
                 new_train = {
                     "line_color": self.LINE_COLORS.get(key[0], self.DEFAULT_COLOR),
@@ -194,7 +190,7 @@ class MetroApiTrain:
         api_url = config["wmata_api_gtfs_rail_incident_url"]
         data = MetroApiUtils.query_api(wifi, api_url)
         print("Received rail incident response from WMATA api...")
-        print(f'all incidents: {data}')
+        print(f"all incidents: {data}")
 
         filtered_incidents = []
         for incident in data:
