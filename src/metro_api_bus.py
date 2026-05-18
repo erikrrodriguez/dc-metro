@@ -40,7 +40,7 @@ class MetroApiBus:
         incidents = []
         if show_incidents and len(bus_lines) > 0:
             print("Fetching bus incidents...")
-            if config['use_gtfs_rt_for_bus_incidents']:
+            if config["use_gtfs_rt_for_bus_incidents"]:
                 try:
                     incidents = self._fetch_bus_incidents_gtfs_rt(wifi, bus_lines)
                 except Exception as e:

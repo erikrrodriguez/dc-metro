@@ -164,6 +164,7 @@ def refresh_trains(trains: dict) -> list[list[dict], list[dict]]:
             trains["train_groups"],
             trains.get("walking_times", []),
             trains.get("show_incidents", False),
+            trains.get("predict_next_trains", False)
         )
     except MetroApiOnFireException:
         reset_wifi()

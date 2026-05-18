@@ -29,6 +29,7 @@ config = {
                 "train_groups": [["1"]],
                 "walking_times": [7],
                 "show_incidents": True,
+                "predict_next_trains": True,
             },
         },
         {
@@ -37,6 +38,7 @@ config = {
                 "train_groups": [["2"]],
                 "walking_times": [7],
                 "show_incidents": True,
+                "predict_next_trains": True,
             },
         },
         {
@@ -102,7 +104,7 @@ config = {
     "character_height": 6,
     "text_padding": 2,
     "text_color": 0xFF7500,
-    "scroll_delay": 0.016,
+    "scroll_delay": 0.006,
     "loading_destination_text": "Loading",
     "loading_min_text": "---",
     "loading_line_color": 0xFF00FF,  # Something something Purple Line joke

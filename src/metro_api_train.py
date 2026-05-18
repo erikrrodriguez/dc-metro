@@ -30,19 +30,36 @@ class MetroApiTrain:
         pass
 
     def fetch_train_predictions(
-        self, wifi, station_codes, groups, walking_times, show_incidents
+        self,
+        wifi,
+        station_codes,
+        groups,
+        walking_times,
+        show_incidents,
+        predict_next_trains,
     ) -> list[list[dict], list[dict]]:
         retries = config["metro_api_retries"]
         for attempt in range(retries + 1):
             try:
                 return self._fetch_train_predictions(
-                    wifi, station_codes, groups, walking_times, show_incidents
+                    wifi,
+                    station_codes,
+                    groups,
+                    walking_times,
+                    show_incidents,
+                    predict_next_trains,
                 )
             except Exception as e:
                 MetroApiUtils.maybe_retry(attempt, retries, str(e))
 
     def _fetch_train_predictions(
-        self, wifi, station_codes, groups, walking_times, show_incidents
+        self,
+        wifi,
+        station_codes,
+        groups,
+        walking_times,
+        show_incidents,
+        predict_next_trains,
     ) -> list[list[dict], list[dict]]:
         print("Fetching trains...")
         start_time = time.monotonic()
@@ -55,7 +72,7 @@ class MetroApiTrain:
         incidents = []
         if show_incidents:
             train_colors = set(t["Line"] for t in data["Trains"])
-            if config['use_gtfs_rt_for_bus_incidents']:
+            if config["use_gtfs_rt_for_rail_incidents"]:
                 try:
                     incidents = self._fetch_gtfs_rail_incidents(wifi, train_colors)
                 except Exception as e:
@@ -76,10 +93,14 @@ class MetroApiTrain:
                 data["Trains"],
             )
         )
+
         trains = [self._normalize_train_response(t, time_buffer) for t in trains]
         trains = [
             t for t in trains if t["line_color"] != self.DEFAULT_COLOR
         ]  # Filter out No Passenger trains
+
+        if predict_next_trains:
+            trains = trains + self.predict_trains(trains)
 
         if max(walking_times) > 0:
             station_walking_times = dict(zip(station_codes, walking_times))
@@ -99,6 +120,53 @@ class MetroApiTrain:
         print(f"Update took: {duration:.2f}s")
 
         return trains, incidents
+
+    def predict_trains(self, trains):
+        # Structure: stats[(line, dest, station, group)] = []
+        print("Predicting trains...")
+        stats = {}
+        for train in trains:
+            key = (
+                train["line_color_text"],
+                train["destination"],
+                train["loc"],
+                train["group"],
+            )
+            if key not in stats:
+                stats[key] = []
+            stats[key].append(train["int_arrival"])
+
+        projected = []
+        for key, arrivals in stats.items():
+            if len(arrivals) > 1:
+                intervals = [
+                    arrivals[i] - arrivals[i - 1] for i in range(1, len(arrivals))
+                ]
+                avg_interval = sum(intervals) / len(intervals)
+            else:
+                avg_interval = arrivals[0]
+
+            print(f'Predicting {key}')
+            print(f'arrivals: {arrivals}')
+
+
+            last_arrival = arrivals[-1]
+            while len(arrivals) < 6:
+                last_arrival += int(avg_interval)
+                arrivals.append(last_arrival)
+                print(f'new arrivals: {arrivals}')
+
+                new_train = {
+                    "line_color": self.LINE_COLORS.get(key[0], self.DEFAULT_COLOR),
+                    "line_color_text": key[0],
+                    "destination": key[1],
+                    "text_arrival": str(last_arrival) + "?",
+                    "int_arrival": last_arrival,
+                    "loc": key[2],
+                    "group": key[3],
+                }
+                projected.append(new_train)
+        return projected
 
     def _fetch_rail_incidents(self, wifi, train_colors) -> list:
         print("Fetching rail incidents...")
@@ -123,9 +191,10 @@ class MetroApiTrain:
 
     def _fetch_gtfs_rail_incidents(self, wifi, train_colors) -> list:
         print("Fetching rail incidents...")
-        api_url = config["wmata_api_rail_incident_url"]
+        api_url = config["wmata_api_gtfs_rail_incident_url"]
         data = MetroApiUtils.query_api(wifi, api_url)
         print("Received rail incident response from WMATA api...")
+        print(f'all incidents: {data}')
 
         filtered_incidents = []
         for incident in data:
@@ -155,6 +224,8 @@ class MetroApiTrain:
             return 0
         elif arrival_time == "ARR":
             return 1
+        elif "?" in arrival_time:  # Train prediction
+            return int(float((arrival_time[:-1])))
         elif arrival_time.isdigit():
             return int(float((arrival_time.strip())))
         else:
@@ -187,4 +258,5 @@ class MetroApiTrain:
             "text_arrival": arrival,
             "int_arrival": int_arrival,
             "loc": loc,
+            "group": train["Group"],
         }
