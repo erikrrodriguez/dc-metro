@@ -1,4 +1,5 @@
 import time
+import gc
 import displayio
 from adafruit_display_shapes.rect import Rect
 from adafruit_display_text.label import Label
@@ -72,7 +73,6 @@ class TrainBoard:
                     )
                 else:
                     self._hide_line(i)
-            print("Successfully updated.")
         else:
             print("No data received. Clearing display.")
             for i in range(config["num_lines"]):
@@ -80,15 +80,13 @@ class TrainBoard:
 
         if len(incidents) > 0:
             self._show_incidents(incidents)
-        else:
-            self.heading_label.text = config["heading_text"]
+        self.heading_label.text = config["heading_text"]
+        print("Successfully updated.")
 
     def _show_incidents(self, incidents):
         for incident in incidents:
             self.heading_label.text = incident["description"]
-            time.sleep(0.5)
             self._scroll(self.heading_label)
-        self.heading_label.text = config["heading_text"]
 
     def _scroll(self, label):
         label_width = label.bounding_box[2]
@@ -122,28 +120,34 @@ class Line:
             fill=config["loading_line_color"],
         )
 
-        self.destination_label = Label(config["font"], anchor_point=(0, 0))
-        self.destination_label.x = config["line_width"] + 1
-        self.destination_label.y = y
-        self.destination_label.color = config["text_color"]
-        self.destination_label.text = config["loading_destination_text"][
-            : config["destination_max_characters"]
-        ]
+        self.info_label = Label(config["font"], anchor_point=(0, 0))
+        self.info_label.x = config["line_width"] + 1
+        self.info_label.y = y
+        self.info_label.color = config["text_color"]
+        self.info_label.text = config["loading_destination_text"] + "  " + config["loading_min_text"]
 
-        self.min_label = Label(config["font"], anchor_point=(0, 0))
-        self.min_label.x = (
-            config["matrix_width"]
-            - (config["min_label_characters"] * config["character_width"])
-            + 1
-        )
-        self.min_label.y = y
-        self.min_label.color = config["text_color"]
-        self.min_label.text = config["loading_min_text"]
+
+        # self.destination_label = Label(config["font"], anchor_point=(0, 0))
+        # self.destination_label.x = config["line_width"] + 1
+        # self.destination_label.y = y
+        # self.destination_label.color = config["text_color"]
+        # self.destination_label.text = config["loading_destination_text"]
+
+        # self.min_label = Label(config["font"], anchor_point=(0, 0))
+        # self.min_label.x = (
+        #     config["matrix_width"]
+        #     - (config["min_label_characters"] * config["character_width"])
+        #     + 1
+        # )
+        # self.min_label.y = y
+        # self.min_label.color = config["text_color"]
+        # self.min_label.text = config["loading_min_text"]
 
         self.group = displayio.Group(scale=1, x=0, y=0)
         self.group.append(self.line_rect)
-        self.group.append(self.destination_label)
-        self.group.append(self.min_label)
+        # self.group.append(self.destination_label)
+        # self.group.append(self.min_label)
+        self.group.append(self.info_label)
 
         parent_group.append(self.group)
 
@@ -171,11 +175,18 @@ class Line:
 
         self.min_label.text = minutes
 
+    def set_info_label(self, destination: str, minutes: str):
+        dest_str = destination[:config["destination_max_characters"]]
+        
+        padding = " " * (int(config["destination_max_characters"]) - len(destination) + (4-len(minutes)))
+        self.info_label.text = f"{dest_str}{padding}{minutes}"
+
     def update(self, line_color: int, destination: str, minutes: str):
         self.show()
         self.set_line_color(line_color)
-        self.set_destination(destination)
-        self.set_arrival_time(minutes)
+        # self.set_destination(destination)
+        # self.set_arrival_time(minutes)
+        self.set_info_label(destination, minutes)
 
 
 class ErrorBoard:

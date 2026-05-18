@@ -1,15 +1,6 @@
 from adafruit_bitmap_font import bitmap_font
 
 config = {
-    #########################
-    # Metro Configuration   #
-    #########################
-    "wmata_api_rail_url": "http://api.wmata.com/StationPrediction.svc/json/GetPrediction/",
-    "wmata_api_bus_url": "http://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=",
-    "wmata_api_rail_incident_url": "http://api.wmata.com/Incidents.svc/json/Incidents",
-    "wmata_api_bus_incident_url": "http://api.wmata.com/Incidents.svc/json/BusIncidents?Route=",
-    "metro_api_retries": 3,
-    "refresh_interval": 8,  # WMATA updates their APIs every 10-20 seconds. Set this proportional to how many pages and API requests you're making (limit 50,000 per 24 hrs)
     ###########################################
     # Define Pages for board to cycle through #
     ###########################################
@@ -53,12 +44,30 @@ config = {
                 "bus_stop_codes": [1001368, 1001441, 1001293],
                 "walking_times": [2, 3, 6],
                 "bus_lines": ["C51", "C91", "D40", "D4X"],
-                "show_incidents": False,
+                "show_incidents": True,
             },
         },
     ],
-    # If there are no trains or buses you can get to in time, then show all trains/buses
-    "show_all_if_none_walking": True,
+    ###############################
+    # Metro Configuration - Rail  #
+    ###############################
+    "wmata_api_rail_url": "http://api.wmata.com/StationPrediction.svc/json/GetPrediction/",
+    "wmata_api_rail_incident_url": "http://api.wmata.com/Incidents.svc/json/Incidents",
+    "wmata_api_gtfs_rail_incident_url": "https://api.wmata.com/gtfs-metro-alert/rail-gtfs-metro-alerts.json",
+    "use_gtfs_rt_for_rail_incidents": True,
+    ###############################
+    # Metro Configuration - Bus   #
+    ###############################
+    "wmata_api_bus_url": "http://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=",
+    "wmata_api_bus_incident_url": "http://api.wmata.com/Incidents.svc/json/BusIncidents?Route=",
+    "wmata_api_gtfs_bus_incident_url": "https://api.wmata.com/gtfs-metro-alert/bus-gtfs-metro-alerts.json",
+    "use_gtfs_rt_for_bus_incidents": False,
+    ###############################
+    # Metro Configuration - Gen   #
+    ###############################
+    "metro_api_retries": 3,
+    "refresh_interval": 8,  # WMATA updates their APIs every 10-20 seconds. Set this proportional to how many pages and API requests you're making (limit 50,000 per 24 hrs)
+    "show_all_if_none_walking": True,  # If there are no trains or buses you can get to in time, then show all trains/buses
     # Full station names mapped to abbreviations
     "station_mapping": {
         "Branch Avenue": "Brnch Av",
@@ -93,7 +102,7 @@ config = {
     "character_height": 6,
     "text_padding": 2,
     "text_color": 0xFF7500,
-    "scroll_delay": 0.0075,
+    "scroll_delay": 0.016,
     "loading_destination_text": "Loading",
     "loading_min_text": "---",
     "loading_line_color": 0xFF00FF,  # Something something Purple Line joke

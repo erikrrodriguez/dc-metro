@@ -6,6 +6,7 @@ from train_board import TrainBoard, ErrorBoard
 from metro_api_common import MetroApiOnFireException
 from metro_api_train import MetroApiTrain
 from metro_api_bus import MetroApiBus
+import gc
 
 import busio
 import board
@@ -233,6 +234,7 @@ try:
         time.sleep(REFRESH_INTERVAL)
         duration = time.monotonic() - start_time
         print(f"===================================Total update took: {duration:.2f}s")
+        gc.collect()
 except Exception as e:
     print(f"Error: {e}")
     train_board = ErrorBoard(f"ERROR! {str(e)}")

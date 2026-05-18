@@ -1,6 +1,7 @@
 import time
 from os import getenv
 from config import config
+import gc
 
 
 class MetroApiOnFireException(Exception):
@@ -22,6 +23,7 @@ class MetroApiUtils:
     @staticmethod
     def query_api(wifi, api_url):
         api_key = getenv("wmata_api_key")
+        gc.collect()
         try:
             with wifi.get(
                 api_url, headers={"api_key": api_key}, timeout=10

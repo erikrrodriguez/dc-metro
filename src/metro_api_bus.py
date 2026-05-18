@@ -1,4 +1,5 @@
 import time
+import gc
 
 from config import config
 from metro_api_common import MetroApiUtils
@@ -33,18 +34,26 @@ class MetroApiBus:
         found_buses = sorted(found_buses, key=lambda b: b["int_arrival"])
         print(f"Buses found: {found_buses}")
 
-        bus_routes = set([b["loc"] for b in found_buses])
+        if len(bus_lines) == 0:
+            bus_lines = set([b["loc"] for b in found_buses])
+
         incidents = []
-        if show_incidents and len(bus_routes) > 0:
+        if show_incidents and len(bus_lines) > 0:
             print("Fetching bus incidents...")
-            for route in bus_routes:
-                for attempt in range(retries + 1):
-                    try:
-                        incidents.extend(self._fetch_bus_incidents(wifi, route))
-                        break
-                    except Exception as e:
-                        MetroApiUtils.maybe_retry(attempt, retries, str(e))
-            incidents = [{"description": i} for i in set(incidents)]
+            if config['use_gtfs_rt_for_bus_incidents']:
+                try:
+                    incidents = self._fetch_bus_incidents_gtfs_rt(wifi, bus_lines)
+                except Exception as e:
+                    pass
+            else:
+                for route in bus_lines:
+                    for attempt in range(retries + 1):
+                        try:
+                            incidents.extend(self._fetch_bus_incidents(wifi, route))
+                            break
+                        except Exception as e:
+                            MetroApiUtils.maybe_retry(attempt, retries, str(e))
+                incidents = [{"description": i} for i in set(incidents)]
             print(f"Bus incidents found: {incidents}")
         duration = time.monotonic() - start_time
         print(f"Update took: {duration:.2f}s")
@@ -89,6 +98,31 @@ class MetroApiBus:
         print("Received bus incident response from WMATA api...")
         incidents = [i["Description"] for i in data["BusIncidents"]]
         return incidents
+
+    def _fetch_bus_incidents_gtfs_rt(self, wifi, bus_lines):
+        api_url = config["wmata_api_gtfs_bus_incident_url"]
+        data = MetroApiUtils.query_api(wifi, api_url)
+        print("Received bus incident response from WMATA api...")
+
+        filtered_incidents = []
+        for incident in data:
+            for entity in incident.get("entities", []):
+                alert = entity.get("alert", {})
+                lines_affected = set()
+                for info in alert.get("informedEntities", []):
+                    route_id = info.get("routeId")
+                    if route_id:
+                        lines_affected.add(route_id)
+
+                if not lines_affected.isdisjoint(bus_lines):
+                    desc_obj = alert.get("descriptionText", {})
+                    translations = desc_obj.get("translations", [])
+                    for translation in translations:
+                        if translation.get("language", "") == "en":
+                            description = translation.get("text", "")
+                            description = description.replace("\n", "")
+                            filtered_incidents.append({"description": description})
+        return filtered_incidents
 
     def _remove_vowels(self, text: str):
         vowels = "aeiouAEIOU"

@@ -16,6 +16,16 @@ class MetroApiTrain:
     }
     DEFAULT_COLOR = 0xFFFFFF
 
+    LINE_NAMES = {
+        "RED": "RD",
+        "ORANGE": "OR",
+        "YELLOW": "YL",
+        "GREEN": "GR",
+        "BLUE": "BL",
+        "SILVER": "SV",
+        "PURPLE": "PL",
+    }
+
     def __init__(self):
         pass
 
@@ -45,10 +55,16 @@ class MetroApiTrain:
         incidents = []
         if show_incidents:
             train_colors = set(t["Line"] for t in data["Trains"])
-            try:
-                incidents = self._fetch_rail_incidents(wifi, train_colors)
-            except Exception as e:
-                print(f"Error fetching rail incidents: {e}")
+            if config['use_gtfs_rt_for_bus_incidents']:
+                try:
+                    incidents = self._fetch_gtfs_rail_incidents(wifi, train_colors)
+                except Exception as e:
+                    print(f"Error fetching rail incidents: {e}")
+            else:
+                try:
+                    incidents = self._fetch_rail_incidents(wifi, train_colors)
+                except Exception as e:
+                    print(f"Error fetching rail incidents: {e}")
 
         station_train_groups = dict(zip(station_codes, groups))
         trains = list(
@@ -101,6 +117,36 @@ class MetroApiTrain:
         filtered_incidents = [
             {"description": i["Description"]} for i in filtered_incidents
         ]
+
+        print(f"Rail incidents found: {filtered_incidents}")
+        return filtered_incidents
+
+    def _fetch_gtfs_rail_incidents(self, wifi, train_colors) -> list:
+        print("Fetching rail incidents...")
+        api_url = config["wmata_api_rail_incident_url"]
+        data = MetroApiUtils.query_api(wifi, api_url)
+        print("Received rail incident response from WMATA api...")
+
+        filtered_incidents = []
+        for incident in data:
+            for entity in incident.get("entities", []):
+                alert = entity.get("alert", {})
+                lines_affected = set()
+                for info in alert.get("informedEntities", []):
+                    route_id = info.get("routeId")
+                    if route_id:
+                        lines_affected.add(
+                            self.LINE_NAMES.get(route_id.upper(), route_id)
+                        )
+
+                if not lines_affected.isdisjoint(train_colors):
+                    desc_obj = alert.get("descriptionText", {})
+                    translations = desc_obj.get("translations", [])
+                    for translation in translations:
+                        if translation.get("language", "") == "en":
+                            description = translation.get("text", "")
+                            description = description.replace("\n", "")
+                            filtered_incidents.append({"description": description})
         print(f"Rail incidents found: {filtered_incidents}")
         return filtered_incidents
 
